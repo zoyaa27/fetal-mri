@@ -1,9 +1,5 @@
 # Fetal Brain MRI Biometry Calculator — Technical Specification
 
-**Author:** Sameer Khanna (sameer_khanna@berkeley.edu)
-**Version:** 1.0
-**Date:** April 2026
-
 ---
 
 ## Table of Contents
