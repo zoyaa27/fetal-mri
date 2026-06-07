@@ -5,6 +5,7 @@
  * differential-diagnosis cards. Hairline rules. Deep teal accent. Serif
  * display + sans body + monospace numerics.
  */
+import { MPRViewer } from "../components/mpr/MPRViewer";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -200,6 +201,25 @@ export default function Home() {
   const [motionSeverity, setMotionSeverity] = useState("None");
   const [focusedGroup, setFocusedGroup] = useState<string>("All");
   const [gaText, setGaText] = useState("");
+
+// --- MOCK VOLUME DATA ---
+  const [mockVolume, setMockVolume] = useState(() => {
+    const dims: [number, number, number] = [64, 64, 64];
+    const size = dims[0] * dims[1] * dims[2];
+    const data = new Float32Array(size);
+    
+    for (let z = 0; z < dims[2]; z++) {
+      for (let y = 0; y < dims[1]; y++) {
+        for (let x = 0; x < dims[0]; x++) {
+          const idx = z * dims[0] * dims[1] + y * dims[0] + x;
+          const dist = Math.sqrt((x-32)**2 + (y-32)**2 + (z-32)**2);
+          data[idx] = dist < 24 ? (1 - dist / 24) : 0; 
+        }
+      }
+    }
+    return { dimensions: dims, data };
+  });
+  // ------------------------------------
 
   const { zs, dxs } = useMemo(() => evaluateAll(values, ga), [values, ga]);
 
@@ -532,7 +552,14 @@ export default function Home() {
                 </div>
               </div>
             </div>
-
+{/* --- VIEWER CONTAINER --- */}
+            <div className="mb-8 p-4 border border-[color:var(--rule)] rounded-sm bg-white">
+              <div className="smallcaps text-[color:var(--teal)] mb-3 font-semibold">
+                Multi-Planar Reconstruction (MPR) Axis Tracking
+              </div>
+              <MPRViewer volume={mockVolume} />
+            </div>
+            {/* ------------------------------------ */}
             <Tabs
               value={focusedGroup}
               onValueChange={setFocusedGroup}

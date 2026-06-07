@@ -36,6 +36,10 @@ export const MPRViewer: React.FC<MPRViewerProps> = ({ volume }) => {
 
     const [X, Y, Z] = volume.dimensions;
     
+    // Config style for crosshair lines
+    const crosshairColor = '#00ff00'; // Bright Neon Green
+    const lineWidth = 1;
+
     // Render Axial Plane (X-Y slicing across Z-axis)
     const renderAxial = () => {
       const canvas = axialRef.current;
@@ -56,6 +60,22 @@ export const MPRViewer: React.FC<MPRViewerProps> = ({ volume }) => {
         }
       }
       ctx.putImageData(imgData, 0, 0);
+
+      // --- Draw Crosshairs ---
+      ctx.lineWidth = lineWidth;
+      ctx.strokeStyle = crosshairColor;
+
+      // Vertical line tracking Sagittal slice (X coordinate)
+      ctx.beginPath();
+      ctx.moveTo(slices.sagittal, 0);
+      ctx.lineTo(slices.sagittal, Y);
+      ctx.stroke();
+
+      // Horizontal line tracking Coronal slice (Y coordinate)
+      ctx.beginPath();
+      ctx.moveTo(0, slices.coronal);
+      ctx.lineTo(X, slices.coronal);
+      ctx.stroke();
     };
 
     // Render Coronal Plane (X-Z slicing across Y-axis)
@@ -77,6 +97,22 @@ export const MPRViewer: React.FC<MPRViewerProps> = ({ volume }) => {
         }
       }
       ctx.putImageData(imgData, 0, 0);
+
+      // --- Draw Crosshairs ---
+      ctx.lineWidth = lineWidth;
+      ctx.strokeStyle = crosshairColor;
+
+      // Vertical line tracking Sagittal slice (X coordinate)
+      ctx.beginPath();
+      ctx.moveTo(slices.sagittal, 0);
+      ctx.lineTo(slices.sagittal, Z);
+      ctx.stroke();
+
+      // Horizontal line tracking Axial slice (Z coordinate)
+      ctx.beginPath();
+      ctx.moveTo(0, slices.axial);
+      ctx.lineTo(X, slices.axial);
+      ctx.stroke();
     };
 
     // Render Sagittal Plane (Y-Z slicing across X-axis)
@@ -98,6 +134,22 @@ export const MPRViewer: React.FC<MPRViewerProps> = ({ volume }) => {
         }
       }
       ctx.putImageData(imgData, 0, 0);
+
+      // --- Draw Crosshairs ---
+      ctx.lineWidth = lineWidth;
+      ctx.strokeStyle = crosshairColor;
+
+      // Vertical line tracking Coronal slice (Y coordinate)
+      ctx.beginPath();
+      ctx.moveTo(slices.coronal, 0);
+      ctx.lineTo(slices.coronal, Z);
+      ctx.stroke();
+
+      // Horizontal line tracking Axial slice (Z coordinate)
+      ctx.beginPath();
+      ctx.moveTo(0, slices.axial);
+      ctx.lineTo(Y, slices.axial);
+      ctx.stroke();
     };
 
     renderAxial();

@@ -12,13 +12,15 @@ ragRouter.post("/query", async (req, res) => {
   const { question } = req.body;
 
   if (!question) {
-    return res.status(400).json({ error: "A question parameter is required." });
+    return res.status(400).json({ response: "A question parameter is required." });
   }
 
   // Locate your Python script relative to this server file
-  const scriptPath = path.resolve(__dirname, "../../python_app/pipelines/rag_assistant.py");
-  
-  // Spawn the python process, passing the user question as an argument
+// Use a clean relative path from the project root to bypass Windows space formatting bugs
+  const scriptPath = "./python_app/pipelines/rag_assistant.py";
+    
+  // Note: If you use a virtual environment, you may need to change "python" to 
+  // path.resolve(__dirname, "../../.venv/bin/python") depending on your OS.
   const pythonProcess = spawn("python", [scriptPath, question]);
 
   let resultData = "";
@@ -28,16 +30,24 @@ ragRouter.post("/query", async (req, res) => {
     resultData += data.toString();
   });
 
+  // Catching the crash logs
   pythonProcess.stderr.on("data", (data) => {
     errorData += data.toString();
   });
 
   pythonProcess.on("close", (code) => {
-    if (code !== 0) {
-      console.error(`Python script exited with code ${code}. Error: ${errorData}`);
-      return res.status(500).json({ error: "Failed to execute RAG pipeline engine." });
+    // 1. If Python throws a fatal error, send the raw traceback to the chatbot!
+    if (code !== 0 || errorData) {
+      console.error(`PYTHON CRASH LOG:`, errorData);
+      return res.status(500).json({ response: `[Python Crash]:\n${errorData}` });
     }
     
+    // 2. If Python succeeds but prints blank space
+    if (!resultData.trim()) {
+      return res.status(500).json({ response: "[Silent Failure]: Script ran but printed nothing. Check your sys.stdout.flush() and print() statements." });
+    }
+    
+    // 3. Success!
     res.json({ response: resultData.trim() });
   });
 });
