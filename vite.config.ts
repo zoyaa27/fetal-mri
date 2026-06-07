@@ -37,5 +37,13 @@ export default defineConfig({
       strict: true,
       deny: ["**/.*"],
     },
+    // FIXED BELOW: Added the missing closing brace right here
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+      },
+    }, 
   },
 });
