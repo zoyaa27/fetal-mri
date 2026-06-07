@@ -1,0 +1,22 @@
+====================================================================
+FETAL MAGNETIC RESONANCE IMAGING REPORT
+====================================================================
+PATIENT ID: [Insert Patient ID]
+GESTATIONAL AGE: [Insert Weeks] weeks, [Insert Days] days
+EXAM DATE: [Insert Current Date]
+
+CLINICAL INDICATIONS:
+Evaluation of fetal central nervous system anatomy following suspicious ultrasound findings.
+
+FINDINGS:
+- Supratentorial Brain: Ventricular system measures [Insert Lateral Ventricle Size] mm.
+- Corpus Callosum: [Insert Corpus Callosum Status]
+- Posterior Fossa: Cerebellum and cisterna magna appear [Insert Posterior Fossa Status].
+- Extra-axial Spaces: Within normal limits for gestational age.
+
+IMPRESSION:
+[Insert AI Clinical Summary Impression based on measurements]
+
+RECOMMENDATIONS:
+[Insert Follow-up Protocol recommendations if anomalies are detected]
+====================================================================

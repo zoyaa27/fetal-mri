@@ -13,6 +13,7 @@ dependencies = [
   "numpy>=2.0",
   "scipy>=1.14",
   "uvicorn[standard]>=0.30",
+  pydicom = "^2.4.0"
 ]
 
 [project.optional-dependencies]

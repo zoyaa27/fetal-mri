@@ -30,6 +30,7 @@ import QualitativeFindingRow from "@/components/QualitativeFindingRow";
 import DifferentialCard, {
   DifferentialRailItem,
 } from "@/components/DifferentialCard";
+import AICopilot from "@/components/AICopilot";
 import {
   AUXILIARY_MEASUREMENTS,
   GA,
@@ -156,15 +157,8 @@ const TOTAL_MEASUREMENT_FIELDS =
   AUXILIARY_MEASUREMENTS.length +
   QUALITATIVE_FINDINGS.length;
 
-// Reference cases for the sample loader.
-//
-// Both samples are pinned to the *50th-percentile prediction* of Luis 2025 at
-// the chosen GA, so the resulting z-scores cluster around zero in the normal
-// case and only depart from zero where the abnormal case intentionally
-// breaks a threshold (atrial dilatation, absent CSP, short CC, small pons,
-// small TCD, wide third ventricle, brain-OFD asymmetry).
 const SAMPLE_NORMAL: Record<string, number | null> = {
-  skull_bpd: 78.6, // mean(30) per Luis: -0.0527·900 + 5.7605·30 - 46.436
+  skull_bpd: 78.6,
   skull_ofd: 95.5,
   brain_bpd: 66.4,
   brain_ofd_left: 85.5,
@@ -186,15 +180,15 @@ const SAMPLE_ABNORMAL: Record<string, number | null> = {
   brain_bpd: 62.0,
   brain_ofd_left: 78.0,
   brain_ofd_right: 78.0,
-  atrial_left: 16.0, // severe VM
-  atrial_right: 12.5, // asymmetric (>2 mm) and mild VM on R
-  cc_length: 20.0, // short CC
-  csp_width: 0.5, // absent CSP
-  tcd: 25.0, // small TCD (z ≈ −2.5 at 26 w)
+  atrial_left: 16.0,
+  atrial_right: 12.5,
+  cc_length: 20.0,
+  csp_width: 0.5,
+  tcd: 25.0,
   vermis_cc: 14.0,
   vermis_ap: 9.0,
-  pons_ap: 6.0, // small pons (z ≈ −4 at 26 w)
-  third_ventricle: 5.0, // wide 3rd V
+  pons_ap: 6.0,
+  third_ventricle: 5.0,
 };
 
 export default function Home() {
@@ -271,7 +265,6 @@ export default function Home() {
 
   const filteredGroups = focusedGroup === "All" ? GROUP_ORDER : [focusedGroup];
 
-  // Highlight GA label on first render
   const gaPillRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     gaPillRef.current?.animate([{ opacity: 0 }, { opacity: 1 }], {
@@ -281,414 +274,421 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen text-[color:var(--ink)]">
-      {/* Top editorial banner */}
-      <div className="border-b border-[color:var(--rule)] bg-[color:var(--paper)]/70 backdrop-blur-sm sticky top-0 z-30">
-        <div className="container py-3 sm:py-4 flex flex-wrap items-center gap-x-5 gap-y-3">
-          <div className="flex items-center gap-3 mr-auto sm:mr-0">
-            <div className="h-8 w-8 rounded-sm border border-[color:var(--teal)] flex items-center justify-center">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.5}
-                style={{ color: "var(--teal)" }}
-              >
-                <path d="M12 21c-4.97 0-9-4.03-9-9 0-4.97 4.03-9 9-9s9 4.03 9 9c0 4.97-4.03 9-9 9z" />
-                <path d="M3 14c3-2 6-2 9 0s6 2 9 0" />
-                <path d="M3 10c3 2 6 2 9 0s6-2 9 0" />
-              </svg>
+    <div className="min-h-screen text-[color:var(--ink)] flex w-screen overflow-hidden">
+      {/* Left Column wrapper expanding to give our old layout full room */}
+      <div className="flex-1 flex flex-col h-screen overflow-y-auto">
+        {/* Top editorial banner */}
+        <div className="border-b border-[color:var(--rule)] bg-[color:var(--paper)]/70 backdrop-blur-sm sticky top-0 z-30">
+          <div className="container py-3 sm:py-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+            <div className="flex items-center gap-3 mr-auto sm:mr-0">
+              <div className="h-8 w-8 rounded-sm border border-[color:var(--teal)] flex items-center justify-center">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  style={{ color: "var(--teal)" }}
+                >
+                  <path d="M12 21c-4.97 0-9-4.03-9-9 0-4.97 4.03-9 9-9s9 4.03 9 9c0 4.97-4.03 9-9 9z" />
+                  <path d="M3 14c3-2 6-2 9 0s6 2 9 0" />
+                  <path d="M3 10c3 2 6 2 9 0s6-2 9 0" />
+                </svg>
+              </div>
+              <div className="leading-tight">
+                <div className="font-display text-[19px] tracking-tight">
+                  Fetal Brain MRI Biometry
+                </div>
+                <div className="smallcaps text-[10px] text-[color:var(--ink-soft)]">
+                  Offline · Client-side · No PHI
+                </div>
+              </div>
             </div>
-            <div className="leading-tight">
-              <div className="font-display text-[19px] tracking-tight">
-                Fetal Brain MRI Biometry
+
+            <div className="h-8 w-px bg-[color:var(--rule)] hidden sm:block" />
+
+            {/* GA input */}
+            <div
+              ref={gaPillRef}
+              className="flex items-center gap-2 sm:gap-3 min-w-0"
+            >
+              <div className="smallcaps text-[color:var(--ink-soft)] hidden md:block">
+                Gestational age
               </div>
-              <div className="smallcaps text-[10px] text-[color:var(--ink-soft)]">
-                Offline · Client-side · No PHI
+              <div className="smallcaps text-[color:var(--ink-soft)] md:hidden">
+                GA
               </div>
+              <div className="flex items-center gap-1 border border-[color:var(--rule)] rounded-sm bg-white px-2 py-1">
+                <Select
+                  value={String(ga.weeks)}
+                  onValueChange={v => setGa(g => ({ ...g, weeks: +v }))}
+                >
+                  <SelectTrigger className="h-7 min-w-[68px] border-0 shadow-none font-numeric text-[15px] px-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 23 }, (_, i) => 18 + i).map(w => (
+                      <SelectItem
+                        key={w}
+                        value={String(w)}
+                        className="font-numeric"
+                      >
+                        {w} w
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-[color:var(--ink-soft)]">·</span>
+                <Select
+                  value={String(ga.days)}
+                  onValueChange={v => setGa(g => ({ ...g, days: +v }))}
+                >
+                  <SelectTrigger className="h-7 min-w-[60px] border-0 shadow-none font-numeric text-[15px] px-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 7 }, (_, i) => i).map(d => (
+                      <SelectItem
+                        key={d}
+                        value={String(d)}
+                        className="font-numeric"
+                      >
+                        {d} d
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="font-numeric text-xs text-[color:var(--ink-soft)]">
+                = {gaToDecimalWeeks(ga).toFixed(1)} w
+              </div>
+              <input
+                aria-label="Quick gestational age entry"
+                value={gaText}
+                onChange={e => setGaText(e.target.value)}
+                onBlur={applyGaText}
+                onKeyDown={e => {
+                  if (e.key === "Enter") {
+                    e.currentTarget.blur();
+                  }
+                }}
+                placeholder="24+3"
+                className="w-[68px] h-7 bg-white border border-[color:var(--rule)] rounded-sm px-2 font-numeric text-xs text-[color:var(--ink)] placeholder:text-[color:var(--ink-soft)]/50 outline-none focus:border-[color:var(--teal)]"
+              />
+            </div>
+
+            <div className="w-full sm:w-auto sm:ml-auto flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <button
+                onClick={() => loadSample("normal")}
+                className="text-xs smallcaps text-[color:var(--ink-soft)] hover:text-[color:var(--teal)] transition-colors flex items-center gap-1.5 px-2 py-1"
+              >
+                <Sparkles className="h-3 w-3" />
+                <span className="hidden sm:inline">Sample:&nbsp;</span>normal
+              </button>
+              <button
+                onClick={() => loadSample("abnormal")}
+                className="text-xs smallcaps text-[color:var(--ink-soft)] hover:text-[color:var(--state-rare)] transition-colors flex items-center gap-1.5 px-2 py-1"
+              >
+                <Sparkles className="h-3 w-3" />
+                <span className="hidden sm:inline">Sample:&nbsp;</span>flagged
+              </button>
+              <button
+                onClick={handleClear}
+                className="text-xs smallcaps text-[color:var(--ink-soft)] hover:text-[color:var(--ink)] transition-colors flex items-center gap-1.5 px-2 py-1 border border-[color:var(--rule)] rounded-sm"
+              >
+                <RotateCcw className="h-3 w-3" /> Clear All
+              </button>
+              <button
+                onClick={handleCopy}
+                className="text-xs smallcaps text-[color:var(--paper)] bg-[color:var(--teal)] hover:bg-[color:var(--ink)] transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-sm"
+              >
+                <Copy className="h-3 w-3" />
+                <span className="hidden sm:inline">Copy to Clipboard</span>
+                <span className="sm:hidden">Copy</span>
+              </button>
+              <Link
+                href="/methodology"
+                className="text-xs smallcaps text-[color:var(--ink-soft)] hover:text-[color:var(--teal)] transition-colors flex items-center gap-1.5 px-2 py-1"
+              >
+                <BookOpen className="h-3 w-3" />
+                <span className="hidden md:inline">Methodology</span>
+                <span className="md:hidden">Docs</span>
+              </Link>
             </div>
           </div>
 
-          <div className="h-8 w-px bg-[color:var(--rule)] hidden sm:block" />
-
-          {/* GA input */}
-          <div
-            ref={gaPillRef}
-            className="flex items-center gap-2 sm:gap-3 min-w-0"
-          >
-            <div className="smallcaps text-[color:var(--ink-soft)] hidden md:block">
-              Gestational age
+          {/* Imaging context collapsible */}
+          <div className="border-t border-[color:var(--rule)] bg-white/40">
+            <div className="container">
+              <Collapsible open={contextOpen} onOpenChange={setContextOpen}>
+                <CollapsibleTrigger className="w-full flex items-center justify-between py-2.5 text-left">
+                  <div className="flex items-center gap-3">
+                    <span className="smallcaps text-[color:var(--ink-soft)]">
+                      Imaging context
+                    </span>
+                    <span className="text-xs text-[color:var(--ink-soft)]">
+                      {fieldStrength} · motion {motionSeverity.toLowerCase()} ·{" "}
+                      multi-source consensus
+                    </span>
+                  </div>
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${contextOpen ? "rotate-180" : ""}`}
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="grid md:grid-cols-3 gap-6 py-4 border-t border-[color:var(--rule)]">
+                    <div>
+                      <div className="smallcaps text-[color:var(--ink-soft)] mb-2">
+                        Field strength
+                      </div>
+                      <Select
+                        value={fieldStrength}
+                        onValueChange={setFieldStrength}
+                      >
+                        <SelectTrigger className="w-full bg-white border-[color:var(--rule)]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["0.55T", "1.5T", "3T"].map(v => (
+                            <SelectItem key={v} value={v}>
+                              {v}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <div className="smallcaps text-[color:var(--ink-soft)] mb-2">
+                        Motion severity
+                      </div>
+                      <Select
+                        value={motionSeverity}
+                        onValueChange={setMotionSeverity}
+                      >
+                        <SelectTrigger className="w-full bg-white border-[color:var(--rule)]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["None", "Mild", "Moderate", "Severe"].map(v => (
+                            <SelectItem key={v} value={v}>
+                              {v}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <div className="smallcaps text-[color:var(--ink-soft)] mb-2">
+                        Consensus mode
+                      </div>
+                      <div className="w-full bg-white border border-[color:var(--rule)] rounded-sm px-3 py-2 text-sm text-[color:var(--ink)]">
+                        Multi-source consensus
+                      </div>
+                      <p className="text-[11px] text-[color:var(--ink-soft)] leading-snug mt-2">
+                        Every measurement is evaluated against all applicable
+                        source-registry entries. Consensus is the mean of in-range
+                        z-scores; Delta z &gt;= 1.0 is flagged as source
+                        disagreement.
+                      </p>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
-            <div className="smallcaps text-[color:var(--ink-soft)] md:hidden">
-              GA
-            </div>
-            <div className="flex items-center gap-1 border border-[color:var(--rule)] rounded-sm bg-white px-2 py-1">
-              <Select
-                value={String(ga.weeks)}
-                onValueChange={v => setGa(g => ({ ...g, weeks: +v }))}
-              >
-                <SelectTrigger className="h-7 min-w-[68px] border-0 shadow-none font-numeric text-[15px] px-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 23 }, (_, i) => 18 + i).map(w => (
-                    <SelectItem
-                      key={w}
-                      value={String(w)}
-                      className="font-numeric"
-                    >
-                      {w} w
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <span className="text-[color:var(--ink-soft)]">·</span>
-              <Select
-                value={String(ga.days)}
-                onValueChange={v => setGa(g => ({ ...g, days: +v }))}
-              >
-                <SelectTrigger className="h-7 min-w-[60px] border-0 shadow-none font-numeric text-[15px] px-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 7 }, (_, i) => i).map(d => (
-                    <SelectItem
-                      key={d}
-                      value={String(d)}
-                      className="font-numeric"
-                    >
-                      {d} d
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="font-numeric text-xs text-[color:var(--ink-soft)]">
-              = {gaToDecimalWeeks(ga).toFixed(1)} w
-            </div>
-            <input
-              aria-label="Quick gestational age entry"
-              value={gaText}
-              onChange={e => setGaText(e.target.value)}
-              onBlur={applyGaText}
-              onKeyDown={e => {
-                if (e.key === "Enter") {
-                  e.currentTarget.blur();
-                }
-              }}
-              placeholder="24+3"
-              className="w-[68px] h-7 bg-white border border-[color:var(--rule)] rounded-sm px-2 font-numeric text-xs text-[color:var(--ink)] placeholder:text-[color:var(--ink-soft)]/50 outline-none focus:border-[color:var(--teal)]"
-            />
-          </div>
-
-          <div className="w-full sm:w-auto sm:ml-auto flex items-center gap-1.5 sm:gap-2 flex-wrap">
-            <button
-              onClick={() => loadSample("normal")}
-              className="text-xs smallcaps text-[color:var(--ink-soft)] hover:text-[color:var(--teal)] transition-colors flex items-center gap-1.5 px-2 py-1"
-            >
-              <Sparkles className="h-3 w-3" />
-              <span className="hidden sm:inline">Sample:&nbsp;</span>normal
-            </button>
-            <button
-              onClick={() => loadSample("abnormal")}
-              className="text-xs smallcaps text-[color:var(--ink-soft)] hover:text-[color:var(--state-rare)] transition-colors flex items-center gap-1.5 px-2 py-1"
-            >
-              <Sparkles className="h-3 w-3" />
-              <span className="hidden sm:inline">Sample:&nbsp;</span>flagged
-            </button>
-            <button
-              onClick={handleClear}
-              className="text-xs smallcaps text-[color:var(--ink-soft)] hover:text-[color:var(--ink)] transition-colors flex items-center gap-1.5 px-2 py-1 border border-[color:var(--rule)] rounded-sm"
-            >
-              <RotateCcw className="h-3 w-3" /> Clear All
-            </button>
-            <button
-              onClick={handleCopy}
-              className="text-xs smallcaps text-[color:var(--paper)] bg-[color:var(--teal)] hover:bg-[color:var(--ink)] transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-sm"
-            >
-              <Copy className="h-3 w-3" />
-              <span className="hidden sm:inline">Copy to Clipboard</span>
-              <span className="sm:hidden">Copy</span>
-            </button>
-            <Link
-              href="/methodology"
-              className="text-xs smallcaps text-[color:var(--ink-soft)] hover:text-[color:var(--teal)] transition-colors flex items-center gap-1.5 px-2 py-1"
-            >
-              <BookOpen className="h-3 w-3" />
-              <span className="hidden md:inline">Methodology</span>
-              <span className="md:hidden">Docs</span>
-            </Link>
           </div>
         </div>
 
-        {/* Imaging context collapsible */}
-        <div className="border-t border-[color:var(--rule)] bg-white/40">
-          <div className="container">
-            <Collapsible open={contextOpen} onOpenChange={setContextOpen}>
-              <CollapsibleTrigger className="w-full flex items-center justify-between py-2.5 text-left">
-                <div className="flex items-center gap-3">
-                  <span className="smallcaps text-[color:var(--ink-soft)]">
-                    Imaging context
-                  </span>
-                  <span className="text-xs text-[color:var(--ink-soft)]">
-                    {fieldStrength} · motion {motionSeverity.toLowerCase()} ·{" "}
-                    multi-source consensus
-                  </span>
+        {/* Body */}
+        <main className="container grid grid-cols-12 gap-x-6 gap-y-10 lg:gap-10 pt-8 sm:pt-10 pb-16 sm:pb-24">
+          {/* Left column — parameters */}
+          <section className="col-span-12 lg:col-span-7 min-w-0">
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4">
+              <div>
+                <div className="smallcaps text-[color:var(--teal)]">
+                  Biometry worksheet
                 </div>
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform ${contextOpen ? "rotate-180" : ""}`}
+                <h1 className="font-display text-[32px] sm:text-[40px] lg:text-[44px] leading-[1.05] tracking-tight mt-1">
+                  Measure, convert, interpret.
+                </h1>
+                <p className="text-[color:var(--ink-soft)] text-[15px] max-w-[48ch] mt-3">
+                  Enter any subset of the fetal brain and posterior-fossa
+                  measurements. Z-scores and percentiles compute live against the
+                  source registry where normative models are available.
+                </p>
+              </div>
+
+              <div className="shrink-0 sm:text-right">
+                <div className="font-numeric text-[13px] text-[color:var(--ink-soft)]">
+                  {measuredCount}/{TOTAL_MEASUREMENT_FIELDS} measured
+                </div>
+                <div
+                  className={`font-numeric text-[13px] ${
+                    abnormalCount > 0
+                      ? "text-[color:var(--state-rare)]"
+                      : "text-[color:var(--state-normal)]"
+                  }`}
+                >
+                  {abnormalCount} flagged (|z| &gt; 2)
+                </div>
+              </div>
+            </div>
+
+            <Tabs
+              value={focusedGroup}
+              onValueChange={setFocusedGroup}
+              className="mb-4 -mx-1 px-1 overflow-x-auto"
+            >
+              <TabsList className="bg-transparent p-0 gap-1 h-auto flex-nowrap sm:flex-wrap">
+                {["All", ...GROUP_ORDER].map(g => (
+                  <TabsTrigger
+                    key={g}
+                    value={g}
+                    className="shrink-0 whitespace-nowrap bg-transparent border border-[color:var(--rule)] rounded-sm smallcaps data-[state=active]:bg-[color:var(--teal)] data-[state=active]:text-[color:var(--paper)] data-[state=active]:border-[color:var(--teal)]"
+                  >
+                    {g}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+
+            <div className="hidden md:grid md:grid-cols-12 gap-3 pb-2 border-b border-[color:var(--ink)]/70">
+              <div className="col-span-5 smallcaps text-[color:var(--ink-soft)]">
+                Parameter
+              </div>
+              <div className="col-span-2 smallcaps text-[color:var(--ink-soft)] text-right">
+                Value
+              </div>
+              <div className="col-span-2 smallcaps text-[color:var(--ink-soft)] text-center">
+                Distribution
+              </div>
+              <div className="col-span-3 smallcaps text-[color:var(--ink-soft)] text-right">
+                z · percentile
+              </div>
+            </div>
+
+            <div>
+              {filteredGroups.map(group => (
+                <div key={group} className="pt-4">
+                  <h3 className="font-display text-[19px] text-[color:var(--ink)] mb-1">
+                    § {group}
+                  </h3>
+                  {PARAMETERS_ALL.filter(p => p.group === group).map(p => (
+                    <ParameterRow
+                      key={p.id}
+                      param={p}
+                      value={values[p.id]}
+                      zr={zs[p.id]}
+                      onChange={v => setValues(prev => ({ ...prev, [p.id]: v }))}
+                      ga={ga}
+                    />
+                  ))}
+                  {AUXILIARY_MEASUREMENTS.filter(
+                    field => field.group === group
+                  ).map(field => (
+                    <AuxiliaryMeasurementRow
+                      key={field.id}
+                      field={field}
+                      value={values[field.id] ?? null}
+                      onChange={v =>
+                        setValues(prev => ({ ...prev, [field.id]: v }))
+                      }
+                    />
+                  ))}
+                  {QUALITATIVE_FINDINGS.filter(
+                    finding => finding.group === group
+                  ).map(finding => (
+                    <QualitativeFindingRow
+                      key={finding.id}
+                      finding={finding}
+                      value={values[finding.id] ?? null}
+                      onChange={v =>
+                        setValues(prev => ({ ...prev, [finding.id]: v }))
+                      }
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 text-[11px] text-[color:var(--ink-soft)] leading-relaxed border-t border-[color:var(--rule)] pt-4">
+              Active mode:{" "}
+              <span className="text-[color:var(--ink)]">
+                multi-source consensus
+              </span>
+              . Per-row source labels, agreement badges, and the structured report
+              update live as gestational age or measurements change. See the{" "}
+              <Link
+                href="/validation"
+                className="underline decoration-[color:var(--teal)]"
+              >
+                validation page
+              </Link>{" "}
+              for worked examples and per-parameter cross-checks.
+            </div>
+          </section>
+
+          {/* Right column — report + differentials */}
+          <aside className="col-span-12 lg:col-span-5 space-y-8 min-w-0">
+            <div className="lg:sticky lg:top-[148px] space-y-8">
+              <article className="bg-white border border-[color:var(--rule)] rounded-sm">
+                <header className="flex items-center justify-between border-b border-[color:var(--rule)] px-5 py-3">
+                  <div>
+                    <div className="smallcaps text-[color:var(--teal)]">
+                      Structured report
+                    </div>
+                    <div className="font-display text-[15px] mt-0.5">
+                      ESPR-style · PowerScribe-ready
+                    </div>
+                  </div>
+                </header>
+                <textarea
+                  aria-label="Structured report preview"
+                  readOnly
+                  value={report}
+                  spellCheck={false}
+                  className="block w-full h-[440px] resize-none border-0 bg-white px-5 py-4 text-[12.5px] leading-relaxed font-numeric text-[color:var(--ink)] outline-none overflow-auto"
                 />
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="grid md:grid-cols-3 gap-6 py-4 border-t border-[color:var(--rule)]">
-                  <div>
-                    <div className="smallcaps text-[color:var(--ink-soft)] mb-2">
-                      Field strength
-                    </div>
-                    <Select
-                      value={fieldStrength}
-                      onValueChange={setFieldStrength}
-                    >
-                      <SelectTrigger className="w-full bg-white border-[color:var(--rule)]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {["0.55T", "1.5T", "3T"].map(v => (
-                          <SelectItem key={v} value={v}>
-                            {v}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <div className="smallcaps text-[color:var(--ink-soft)] mb-2">
-                      Motion severity
-                    </div>
-                    <Select
-                      value={motionSeverity}
-                      onValueChange={setMotionSeverity}
-                    >
-                      <SelectTrigger className="w-full bg-white border-[color:var(--rule)]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {["None", "Mild", "Moderate", "Severe"].map(v => (
-                          <SelectItem key={v} value={v}>
-                            {v}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <div className="smallcaps text-[color:var(--ink-soft)] mb-2">
-                      Consensus mode
-                    </div>
-                    <div className="w-full bg-white border border-[color:var(--rule)] rounded-sm px-3 py-2 text-sm text-[color:var(--ink)]">
-                      Multi-source consensus
-                    </div>
-                    <p className="text-[11px] text-[color:var(--ink-soft)] leading-snug mt-2">
-                      Every measurement is evaluated against all applicable
-                      source-registry entries. Consensus is the mean of in-range
-                      z-scores; Delta z &gt;= 1.0 is flagged as source
-                      disagreement.
-                    </p>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
+                <footer className="border-t border-[color:var(--rule)] px-5 py-3 flex justify-end">
+                  <button
+                    onClick={handleCopy}
+                    className="text-xs smallcaps text-[color:var(--paper)] bg-[color:var(--teal)] hover:bg-[color:var(--ink)] transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-sm whitespace-nowrap"
+                  >
+                    <Copy className="h-3 w-3" /> Copy to Clipboard
+                  </button>
+                </footer>
+              </article>
+
+              <DifferentialPanel dxs={dxs} />
+            </div>
+          </aside>
+        </main>
+
+        <footer className="border-t border-[color:var(--rule)] bg-white/50">
+          <div className="container py-8 flex flex-wrap gap-4 items-start justify-between text-[12px] text-[color:var(--ink-soft)]">
+            <div className="max-w-xl">
+              Workflow-integrated fetal brain MRI biometry calculator. Normative
+              reference data: Luis&nbsp;2025 (auto-proc-SVRTK), with
+              cross-validation against Tilea&nbsp;2009, Kyriakopoulou&nbsp;2017,
+              Vatansever&nbsp;2013, Dovjak&nbsp;2021, Kertes&nbsp;2021,
+              Conte&nbsp;2018, and third-ventricle raw-threshold checks. No
+              patient data is transmitted or stored; refreshing the page clears
+              all inputs.
+            </div>
+            <div className="flex items-center gap-5">
+              <Link href="/methodology" className="cite">
+                Read methodology →
+              </Link>
+              <Link href="/validation" className="cite">
+                Validation &amp; worked examples →
+              </Link>
+            </div>
           </div>
-        </div>
+        </footer>
       </div>
 
-      {/* Body */}
-      <main className="container grid grid-cols-12 gap-x-6 gap-y-10 lg:gap-10 pt-8 sm:pt-10 pb-16 sm:pb-24">
-        {/* Left column — parameters */}
-        <section className="col-span-12 lg:col-span-7 min-w-0">
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4">
-            <div>
-              <div className="smallcaps text-[color:var(--teal)]">
-                Biometry worksheet
-              </div>
-              <h1 className="font-display text-[32px] sm:text-[40px] lg:text-[44px] leading-[1.05] tracking-tight mt-1">
-                Measure, convert, interpret.
-              </h1>
-              <p className="text-[color:var(--ink-soft)] text-[15px] max-w-[48ch] mt-3">
-                Enter any subset of the fetal brain and posterior-fossa
-                measurements. Z-scores and percentiles compute live against the
-                source registry where normative models are available.
-              </p>
-            </div>
+      {/* RIGHT SIDEBAR: Mount your live RAG panel right here! */}
+      <AICopilot />
 
-            <div className="shrink-0 sm:text-right">
-              <div className="font-numeric text-[13px] text-[color:var(--ink-soft)]">
-                {measuredCount}/{TOTAL_MEASUREMENT_FIELDS} measured
-              </div>
-              <div
-                className={`font-numeric text-[13px] ${
-                  abnormalCount > 0
-                    ? "text-[color:var(--state-rare)]"
-                    : "text-[color:var(--state-normal)]"
-                }`}
-              >
-                {abnormalCount} flagged (|z| &gt; 2)
-              </div>
-            </div>
-          </div>
-
-          <Tabs
-            value={focusedGroup}
-            onValueChange={setFocusedGroup}
-            className="mb-4 -mx-1 px-1 overflow-x-auto"
-          >
-            <TabsList className="bg-transparent p-0 gap-1 h-auto flex-nowrap sm:flex-wrap">
-              {["All", ...GROUP_ORDER].map(g => (
-                <TabsTrigger
-                  key={g}
-                  value={g}
-                  className="shrink-0 whitespace-nowrap bg-transparent border border-[color:var(--rule)] rounded-sm smallcaps data-[state=active]:bg-[color:var(--teal)] data-[state=active]:text-[color:var(--paper)] data-[state=active]:border-[color:var(--teal)]"
-                >
-                  {g}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-
-          <div className="hidden md:grid md:grid-cols-12 gap-3 pb-2 border-b border-[color:var(--ink)]/70">
-            <div className="col-span-5 smallcaps text-[color:var(--ink-soft)]">
-              Parameter
-            </div>
-            <div className="col-span-2 smallcaps text-[color:var(--ink-soft)] text-right">
-              Value
-            </div>
-            <div className="col-span-2 smallcaps text-[color:var(--ink-soft)] text-center">
-              Distribution
-            </div>
-            <div className="col-span-3 smallcaps text-[color:var(--ink-soft)] text-right">
-              z · percentile
-            </div>
-          </div>
-
-          <div>
-            {filteredGroups.map(group => (
-              <div key={group} className="pt-4">
-                <h3 className="font-display text-[19px] text-[color:var(--ink)] mb-1">
-                  § {group}
-                </h3>
-                {PARAMETERS_ALL.filter(p => p.group === group).map(p => (
-                  <ParameterRow
-                    key={p.id}
-                    param={p}
-                    value={values[p.id]}
-                    zr={zs[p.id]}
-                    onChange={v => setValues(prev => ({ ...prev, [p.id]: v }))}
-                    ga={ga}
-                  />
-                ))}
-                {AUXILIARY_MEASUREMENTS.filter(
-                  field => field.group === group
-                ).map(field => (
-                  <AuxiliaryMeasurementRow
-                    key={field.id}
-                    field={field}
-                    value={values[field.id] ?? null}
-                    onChange={v =>
-                      setValues(prev => ({ ...prev, [field.id]: v }))
-                    }
-                  />
-                ))}
-                {QUALITATIVE_FINDINGS.filter(
-                  finding => finding.group === group
-                ).map(finding => (
-                  <QualitativeFindingRow
-                    key={finding.id}
-                    finding={finding}
-                    value={values[finding.id] ?? null}
-                    onChange={v =>
-                      setValues(prev => ({ ...prev, [finding.id]: v }))
-                    }
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 text-[11px] text-[color:var(--ink-soft)] leading-relaxed border-t border-[color:var(--rule)] pt-4">
-            Active mode:{" "}
-            <span className="text-[color:var(--ink)]">
-              multi-source consensus
-            </span>
-            . Per-row source labels, agreement badges, and the structured report
-            update live as gestational age or measurements change. See the{" "}
-            <Link
-              href="/validation"
-              className="underline decoration-[color:var(--teal)]"
-            >
-              validation page
-            </Link>{" "}
-            for worked examples and per-parameter cross-checks.
-          </div>
-        </section>
-
-        {/* Right column — report + differentials */}
-        <aside className="col-span-12 lg:col-span-5 space-y-8 min-w-0">
-          <div className="lg:sticky lg:top-[148px] space-y-8">
-            <article className="bg-white border border-[color:var(--rule)] rounded-sm">
-              <header className="flex items-center justify-between border-b border-[color:var(--rule)] px-5 py-3">
-                <div>
-                  <div className="smallcaps text-[color:var(--teal)]">
-                    Structured report
-                  </div>
-                  <div className="font-display text-[15px] mt-0.5">
-                    ESPR-style · PowerScribe-ready
-                  </div>
-                </div>
-              </header>
-              <textarea
-                aria-label="Structured report preview"
-                readOnly
-                value={report}
-                spellCheck={false}
-                className="block w-full h-[440px] resize-none border-0 bg-white px-5 py-4 text-[12.5px] leading-relaxed font-numeric text-[color:var(--ink)] outline-none overflow-auto"
-              />
-              <footer className="border-t border-[color:var(--rule)] px-5 py-3 flex justify-end">
-                <button
-                  onClick={handleCopy}
-                  className="text-xs smallcaps text-[color:var(--paper)] bg-[color:var(--teal)] hover:bg-[color:var(--ink)] transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-sm whitespace-nowrap"
-                >
-                  <Copy className="h-3 w-3" /> Copy to Clipboard
-                </button>
-              </footer>
-            </article>
-
-            <DifferentialPanel dxs={dxs} />
-          </div>
-        </aside>
-      </main>
-
-      <footer className="border-t border-[color:var(--rule)] bg-white/50">
-        <div className="container py-8 flex flex-wrap gap-4 items-start justify-between text-[12px] text-[color:var(--ink-soft)]">
-          <div className="max-w-xl">
-            Workflow-integrated fetal brain MRI biometry calculator. Normative
-            reference data: Luis&nbsp;2025 (auto-proc-SVRTK), with
-            cross-validation against Tilea&nbsp;2009, Kyriakopoulou&nbsp;2017,
-            Vatansever&nbsp;2013, Dovjak&nbsp;2021, Kertes&nbsp;2021,
-            Conte&nbsp;2018, and third-ventricle raw-threshold checks. No
-            patient data is transmitted or stored; refreshing the page clears
-            all inputs.
-          </div>
-          <div className="flex items-center gap-5">
-            <Link href="/methodology" className="cite">
-              Read methodology →
-            </Link>
-            <Link href="/validation" className="cite">
-              Validation &amp; worked examples →
-            </Link>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

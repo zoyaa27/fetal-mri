@@ -1,0 +1,17 @@
+[FETAL BRAIN BIOMETRIC REFERENCE BIAS DATA - GESTATIONAL AGE]
+
+Gestational Week 20:
+- Normal Lateral Ventricle Width: 6.5 mm (± 1.2 mm)
+- Normal Corpus Callosum Length: 18.0 mm to 20.0 mm
+
+Gestational Week 24:
+- Normal Lateral Ventricle Width: 6.8 mm (± 1.3 mm)
+- Normal Corpus Callosum Length: 22.0 mm to 25.0 mm
+
+Gestational Week 28:
+- Normal Lateral Ventricle Width: 7.0 mm (± 1.5 mm)
+- Normal Corpus Callosum Length: 27.0 mm to 31.0 mm
+
+Gestational Week 32:
+- Normal Lateral Ventricle Width: 7.2 mm (± 1.5 mm)
+- Normal Corpus Callosum Length: 32.0 mm to 36.0 mm

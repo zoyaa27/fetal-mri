@@ -1,0 +1,11 @@
+[CRITICAL GUARDRAILS & PROTOCOLS]
+
+Rule 1: Ventriculomegaly Threshold
+- Normal fetal lateral ventricles must measure LESS than 10.0 mm.
+- Mild Ventriculomegaly: 10.0 mm to 12.0 mm.
+- Moderate Ventriculomegaly: 12.1 mm to 15.0 mm.
+- Severe Ventriculomegaly: Greater than 15.0 mm.
+- GUARDRAIL: If any measurement exceeds 10.0 mm, the report IMPRESSION must explicitly include the word "Ventriculomegaly" and recommend a follow-up ultrasound or MRI in 2–4 weeks.
+
+Rule 2: De-identification Verification
+- The pipeline must reject files containing raw patient names or clear text dates of birth before compiling a report.
