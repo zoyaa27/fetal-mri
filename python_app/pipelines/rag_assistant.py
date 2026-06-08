@@ -2,6 +2,8 @@ import os
 import sys
 from google import genai
 
+sys.stdout.reconfigure(encoding='utf-8')
+
 # 1. Grab environment variable if present
 api_key = os.environ.get("GEMINI_API_KEY")
 
