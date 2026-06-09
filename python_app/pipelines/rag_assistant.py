@@ -9,7 +9,7 @@ api_key = os.environ.get("GEMINI_API_KEY")
 
 # Fallback block: If terminal didn't pass the key, use your hardcoded one
 if not api_key:
-    api_key = "AQ.Ab8RN6J-p5O-jYbZqm1TloBhNu2lC6iKjcLw1XVAgHs4cb6wBQ" # <-- Your real key goes here inside quotes!
+    api_key = "enter API key here" # <-- Your real key goes here inside quotes!
 
 # Initialize the global client once using our verified key configuration
 client = genai.Client(api_key=api_key)
